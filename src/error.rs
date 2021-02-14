@@ -1,8 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum Error
-{
+pub enum Error {
     #[error("Http request failed: {0}")]
     Http(#[from] reqwest::Error),
     #[error("Deserializing failed: {0}")]

@@ -2,23 +2,24 @@
 extern crate serde;
 extern crate chrono;
 extern crate futures;
-extern crate thiserror;
-extern crate reqwest;
 extern crate log;
+extern crate reqwest;
+extern crate thiserror;
 
 use chrono::NaiveDate;
 
 use std::collections::{BTreeSet, HashMap};
 
+use log::debug;
+
 mod error;
 pub use error::Error;
 
-mod api;
 mod algo;
+mod api;
 
 #[derive(PartialEq, Eq, Hash)]
-pub enum Province
-{
+pub enum Province {
     AB,
     BC,
     MB,
@@ -34,12 +35,9 @@ pub enum Province
     YT,
 }
 
-impl Province
-{
-    fn from_api_id(id: &str) -> Result<Province, Error>
-    {
-        match id
-        {
+impl Province {
+    fn from_api_id(id: &str) -> Result<Province, Error> {
+        match id {
             "AB" => Ok(Province::AB),
             "BC" => Ok(Province::BC),
             "MB" => Ok(Province::MB),
@@ -60,8 +58,7 @@ impl Province
 
 pub type CanadianHolidays = HashMap<Province, Vec<NaiveDate>>;
 
-pub struct Planner
-{
+pub struct Planner {
     holidays: CanadianHolidays,
     province: Province,
     num_vacation_days: u16,
@@ -69,10 +66,8 @@ pub struct Planner
     start_date: NaiveDate,
 }
 
-impl Planner
-{
-    pub fn new(mut holidays: CanadianHolidays, province: Province) -> Planner
-    {
+impl Planner {
+    pub fn new(mut holidays: CanadianHolidays, province: Province) -> Planner {
         for (_, province_holidays) in &mut holidays {
             province_holidays.sort();
         }
@@ -86,22 +81,16 @@ impl Planner
         }
     }
 
-    pub fn from_web(province: Province) -> Result<Planner, Error>
-    {
+    pub fn from_web(province: Province) -> Result<Planner, Error> {
         let api_response =
-            reqwest::blocking::get("https://canada-holidays.ca/api/v1/holidays")?
-            .text()?;
+            reqwest::blocking::get("https://canada-holidays.ca/api/v1/holidays")?.text()?;
 
         let parsed_response = serde_json::from_str::<api::HolidaysResponse>(&api_response)?;
-
 
         let mut holidays = CanadianHolidays::new();
 
         for holiday in parsed_response.holidays {
-
-            let date = NaiveDate::parse_from_str(
-                &holiday.date,
-                "%Y-%m-%d")?;
+            let date = NaiveDate::parse_from_str(&holiday.date, "%Y-%m-%d")?;
 
             for province in holiday.provinces {
                 let province_key = Province::from_api_id(&province.id)?;
@@ -115,7 +104,6 @@ impl Planner
             province_holidays.sort();
         }
 
-
         Ok(Planner {
             holidays,
             province,
@@ -125,14 +113,11 @@ impl Planner
         })
     }
 
-
-    pub fn holidays(&self) -> &[NaiveDate]
-    {
+    pub fn holidays(&self) -> &[NaiveDate] {
         &self.holidays[&self.province]
     }
 
-    pub fn fixed_vacation_days(&self) -> impl Iterator<Item=&NaiveDate>
-    {
+    pub fn fixed_vacation_days(&self) -> impl Iterator<Item = &NaiveDate> {
         self.fixed_vacation_days.iter()
     }
 
@@ -140,13 +125,16 @@ impl Planner
         self.num_vacation_days = num;
     }
 
-    pub fn add_vacation_day(&mut self, date: NaiveDate) -> Result<(), Error>
-    {
+    pub fn set_fixed_vacation_days(
+        &mut self,
+        dates: impl IntoIterator<Item = NaiveDate>,
+    ) -> Result<(), Error> {
         if self.remaining_days() == 0 {
             return Err(Error::InsertionFail);
         }
 
-        self.fixed_vacation_days.insert(date);
+        self.fixed_vacation_days.clear();
+        self.fixed_vacation_days.extend(dates.into_iter());
 
         Ok(())
     }
@@ -155,14 +143,15 @@ impl Planner
         self.start_date = date;
     }
 
-    pub fn suggested_vacation_weeks(&self) -> Vec<chrono::IsoWeek> {
+    pub fn suggested_vacation_days(&self) -> Vec<NaiveDate> {
         let mut merged_dates = self.holidays[&self.province].clone();
         merged_dates.extend(self.fixed_vacation_days.iter());
-        algo::calculate_vacation_weeks(merged_dates.iter(), self.remaining_days(), &self.start_date)
+        algo::calculate_vacation_days(merged_dates, self.remaining_days(), &self.start_date)
     }
 
-    fn remaining_days(&self) -> u16
-    {
-        self.num_vacation_days - (self.fixed_vacation_days.len() as u16)
+    fn remaining_days(&self) -> u16 {
+        let remaining_days = self.num_vacation_days - (self.fixed_vacation_days.len() as u16);
+        debug!("{}", remaining_days);
+        remaining_days
     }
 }
