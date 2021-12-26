@@ -73,6 +73,11 @@ pub fn calculate_vacation_days<'a>(
 
     fixed_days.sort();
     let relevant_fixed_days = get_relevant_fixed_days(fixed_days, start_date);
+    if relevant_fixed_days.len() < 2 {
+        // FIXME: Should work when there are 0/1 holidays
+        return vec![];
+    }
+
     let times_between_days = compute_times_between_days(&relevant_fixed_days);
     let days_off_between = compute_days_per_bucket(&times_between_days, remaining_days);
     let ideal_days_off = compute_ideal_days_off(&relevant_fixed_days, &days_off_between);

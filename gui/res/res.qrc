@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>Month.qml</file>
+    <file>Planner.qml</file>
+    <file>PlanningCalendar.qml</file>
+    <file>util.js</file>
+</qresource>
+</RCC>

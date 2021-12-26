@@ -3,7 +3,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.15
-import VacationPlanner 1.0
 
 import "./util.js" as Util
 
@@ -19,14 +18,6 @@ Window {
 
     title: "Vaction Planner"
 
-    VacationPlanner {
-        id: planner
-
-        numVacationDays: numVacationDays.value
-        startDate: startDateCalendar.selectedDate
-        fixedVacationDays: calendar.fixedVacationDays
-    }
-
     Dialog {
         id: startDatePicker
         standardButtons: Dialog.Ok
@@ -36,6 +27,24 @@ Window {
             id: startDateCalendar
             selectedDate: new Date(Date.now())
         }
+    }
+
+    Binding {
+        target: planner
+        property: "startDate"
+        value: startDateCalendar.selectedDate
+    }
+
+    Binding {
+        target: planner
+        property: "fixedVacationDays"
+        value: calendar.fixedVacationDays
+    }
+
+    Binding {
+        target: planner
+        property: "numVacationDays"
+        value: numVacationDaysBox.value
     }
 
     ColumnLayout {
@@ -78,9 +87,10 @@ Window {
             }
 
             SpinBox {
-                id: numVacationDays
+                id: numVacationDaysBox
                 value: 14
             }
+
 
             Label {
                 text: "Province: "

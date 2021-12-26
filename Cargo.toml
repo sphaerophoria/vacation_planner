@@ -5,6 +5,9 @@ authors = ["Mick Sayson <mick@sayson.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies]
+cmake = "0.1"
+bindgen = "0.59"
 
 [dependencies]
 chrono = "0.4.19"
@@ -15,5 +18,3 @@ futures = "0.3.12"
 thiserror = "1.0.23"
 log = "0.4.14"
 pretty_env_logger = "0.4.0"
-qmetaobject = "0.1.4"
-cstr = "0.2.8"
